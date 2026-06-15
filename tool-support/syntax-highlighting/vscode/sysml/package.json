@@ -42,6 +42,11 @@
                     "type": "string",
                     "default": "java",
                     "description": "Java executable used to launch the SysML language server."
+                },
+                "sysml.workspaceValidation.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run the headless SysML workspace semantic/type validator and publish diagnostics for all .sysml and .kerml files in the workspace."
                 }
             }
         }
