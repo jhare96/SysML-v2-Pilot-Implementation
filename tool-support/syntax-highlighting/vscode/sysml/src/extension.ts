@@ -9,20 +9,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const config = vscode.workspace.getConfiguration('sysml');
     const javaCommand = config.get<string>('languageServer.java', 'java');
     const configuredJar = config.get<string>('languageServer.jar', '');
-    const serverJar = configuredJar || context.asAbsolutePath(path.join('server', 'org.omg.sysml.interactive-all.jar'));
+    const serverJar = configuredJar || findBundledServerJar(context);
 
-    if (!fs.existsSync(serverJar)) {
+    if (!serverJar || !fs.existsSync(serverJar)) {
         vscode.window.showWarningMessage(
             'SysML language server jar not found. Set sysml.languageServer.jar to the org.omg.sysml.interactive-*-all.jar path.'
         );
         return;
     }
 
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const serverOptions: ServerOptions = {
         command: javaCommand,
         args: ['-cp', serverJar, 'org.omg.sysml.interactive.SysMLLanguageServerLauncher'],
         options: {
-            cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+            cwd: workspaceFolder || context.extensionPath
         }
     };
 
@@ -39,6 +40,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     client = new LanguageClient('sysml', 'SysML Language Server', serverOptions, clientOptions);
     context.subscriptions.push(client);
     await client.start();
+}
+
+function findBundledServerJar(context: vscode.ExtensionContext): string | undefined {
+    const serverDirectory = context.asAbsolutePath('server');
+    if (!fs.existsSync(serverDirectory)) {
+        return undefined;
+    }
+
+    const candidates = fs.readdirSync(serverDirectory)
+        .filter(file => /^org\.omg\.sysml\.interactive-.*-all\.jar$/.test(file) || file === 'org.omg.sysml.interactive-all.jar')
+        .sort();
+    const candidate = candidates[candidates.length - 1];
+    return candidate ? path.join(serverDirectory, candidate) : undefined;
 }
 
 export async function deactivate(): Promise<void> {

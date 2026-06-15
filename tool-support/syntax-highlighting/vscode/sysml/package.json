@@ -4,7 +4,7 @@
     "description": "OMG Systems Modeling Language",
     "version": "0.1.0",
     "engines": {
-        "vscode": "^1.45.0"
+        "vscode": "^1.82.0"
     },
     "categories": [
         "Programming Languages"
