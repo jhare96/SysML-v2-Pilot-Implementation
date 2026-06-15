@@ -2,24 +2,69 @@
     "name": "sysml",
     "displayName": "SysML",
     "description": "OMG Systems Modeling Language",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "engines": {
-        "vscode": "^1.45.0"
+        "vscode": "^1.82.0"
     },
     "categories": [
         "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "sysml",
-            "aliases": ["sysml", "SysML"],
-            "extensions": [".sysml"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "sysml",
-            "scopeName": "source.sysml",
-            "path": "./syntaxes/sysml.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "sysml",
+                "aliases": [
+                    "sysml",
+                    "SysML"
+                ],
+                "extensions": [
+                    ".sysml"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "sysml",
+                "scopeName": "source.sysml",
+                "path": "./syntaxes/sysml.tmLanguage.json"
+            }
+        ],
+        "configuration": {
+            "title": "SysML",
+            "properties": {
+                "sysml.languageServer.jar": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Absolute path to the headless SysML language server all-in-one jar. If empty, the extension looks inside the extension server directory for org.omg.sysml.interactive-all.jar or a single org.omg.sysml.interactive-*-all.jar file."
+                },
+                "sysml.languageServer.java": {
+                    "type": "string",
+                    "default": "java",
+                    "description": "Java executable used to launch the SysML language server."
+                },
+                "sysml.workspaceValidation.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run the headless SysML workspace semantic/type validator and publish diagnostics for all .sysml and .kerml files in the workspace."
+                }
+            }
+        }
+    },
+    "main": "./out/extension.js",
+    "activationEvents": [
+        "onLanguage:sysml"
+    ],
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "dependencies": {
+        "vscode-languageclient": "9.0.1"
+    },
+    "devDependencies": {
+        "@types/node": "20.11.30",
+        "@types/vscode": "1.82.0",
+        "typescript": "5.4.5"
     }
 }
