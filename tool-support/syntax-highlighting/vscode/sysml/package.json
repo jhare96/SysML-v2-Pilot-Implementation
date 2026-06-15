@@ -36,7 +36,7 @@
                 "sysml.languageServer.jar": {
                     "type": "string",
                     "default": "",
-                    "description": "Absolute path to the headless SysML language server all-in-one jar. If empty, the extension looks for server/org.omg.sysml.interactive-all.jar inside the extension."
+                    "description": "Absolute path to the headless SysML language server all-in-one jar. If empty, the extension looks inside the extension server directory for org.omg.sysml.interactive-all.jar or a single org.omg.sysml.interactive-*-all.jar file."
                 },
                 "sysml.languageServer.java": {
                     "type": "string",

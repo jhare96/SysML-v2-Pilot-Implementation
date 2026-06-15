@@ -13,7 +13,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     if (!serverJar || !fs.existsSync(serverJar)) {
         vscode.window.showWarningMessage(
-            'SysML language server jar not found. Set sysml.languageServer.jar to the org.omg.sysml.interactive-*-all.jar path.'
+            'SysML language server jar not found. Set sysml.languageServer.jar to the absolute path of org.omg.sysml.interactive-*-all.jar.'
         );
         return;
     }
@@ -48,11 +48,14 @@ function findBundledServerJar(context: vscode.ExtensionContext): string | undefi
         return undefined;
     }
 
+    const unversionedJar = path.join(serverDirectory, 'org.omg.sysml.interactive-all.jar');
+    if (fs.existsSync(unversionedJar)) {
+        return unversionedJar;
+    }
+
     const candidates = fs.readdirSync(serverDirectory)
-        .filter(file => /^org\.omg\.sysml\.interactive-.*-all\.jar$/.test(file) || file === 'org.omg.sysml.interactive-all.jar')
-        .sort();
-    const candidate = candidates[candidates.length - 1];
-    return candidate ? path.join(serverDirectory, candidate) : undefined;
+        .filter(file => /^org\.omg\.sysml\.interactive-.*-all\.jar$/.test(file));
+    return candidates.length === 1 ? path.join(serverDirectory, candidates[0]) : undefined;
 }
 
 export async function deactivate(): Promise<void> {

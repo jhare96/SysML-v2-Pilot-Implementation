@@ -16,4 +16,4 @@ Then set `sysml.languageServer.jar` to the generated `org.omg.sysml.interactive-
 java -cp <jar> org.omg.sysml.interactive.SysMLLanguageServerLauncher
 ```
 
-Alternatively, package a jar matching `server/org.omg.sysml.interactive-*-all.jar` inside the extension. If no workspace folder is open, the server starts from the extension directory.
+Alternatively, package `server/org.omg.sysml.interactive-all.jar` or a single jar matching `server/org.omg.sysml.interactive-*-all.jar` inside the extension. If no workspace folder is open, the server starts from the extension directory.
