@@ -16,4 +16,4 @@ Then set `sysml.languageServer.jar` to the generated `org.omg.sysml.interactive-
 java -cp <jar> org.omg.sysml.interactive.SysMLLanguageServerLauncher
 ```
 
-Alternatively, package `server/org.omg.sysml.interactive-all.jar` or exactly one jar matching `server/org.omg.sysml.interactive-*-all.jar` inside the extension. If no workspace folder is open, the server starts from the extension directory.
+Alternatively, package `server/org.omg.sysml.interactive-all.jar` or exactly one jar matching `server/org.omg.sysml.interactive-*-all.jar` inside the extension. The server process starts from the extension directory; workspace folders are provided through the Language Server Protocol by VS Code.

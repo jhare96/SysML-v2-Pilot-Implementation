@@ -18,19 +18,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return;
     }
 
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const serverOptions: ServerOptions = {
         command: javaCommand,
         args: ['-cp', serverJar, 'org.omg.sysml.interactive.SysMLLanguageServerLauncher'],
         options: {
-            cwd: workspaceFolder || context.extensionPath
+            cwd: context.extensionPath
         }
     };
 
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            { scheme: 'file', language: 'sysml' },
-            { scheme: 'file', pattern: '**/*.sysml' }
+            { scheme: 'file', language: 'sysml' }
         ],
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher('**/*.sysml')
@@ -57,7 +55,7 @@ function findBundledServerJar(context: vscode.ExtensionContext): string | undefi
         .filter(file => /^org\.omg\.sysml\.interactive-.*-all\.jar$/.test(file));
     if (candidates.length > 1) {
         vscode.window.showWarningMessage(
-            'Multiple bundled SysML language server jars were found. Set sysml.languageServer.jar to the absolute path of the jar to use.'
+            'Multiple bundled SysML language server jars were found. Set sysml.languageServer.jar to the absolute path of the generated org.omg.sysml.interactive-*-all.jar to use, or rename the desired bundled jar to org.omg.sysml.interactive-all.jar.'
         );
         return undefined;
     }
