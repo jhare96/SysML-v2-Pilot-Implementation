@@ -4,8 +4,11 @@ exports.deactivate = exports.activate = void 0;
 const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
+const child_process_1 = require("child_process");
 const node_1 = require("vscode-languageclient/node");
 let client;
+let diagnostics;
+let validationTimer;
 async function activate(context) {
     const config = vscode.workspace.getConfiguration('sysml');
     const javaCommand = config.get('languageServer.java', 'java');
@@ -33,6 +36,24 @@ async function activate(context) {
     client = new node_1.LanguageClient('sysml', 'SysML Language Server', serverOptions, clientOptions);
     context.subscriptions.push(client);
     await client.start();
+    diagnostics = vscode.languages.createDiagnosticCollection('sysml-workspace');
+    context.subscriptions.push(diagnostics);
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(document => {
+        if (isSysMLDocument(document)) {
+            scheduleWorkspaceValidation(javaCommand, serverJar);
+        }
+    }));
+    context.subscriptions.push(vscode.workspace.onDidCreateFiles(event => {
+        if (event.files.some(isSysMLUri)) {
+            scheduleWorkspaceValidation(javaCommand, serverJar);
+        }
+    }));
+    context.subscriptions.push(vscode.workspace.onDidDeleteFiles(event => {
+        if (event.files.some(isSysMLUri)) {
+            scheduleWorkspaceValidation(javaCommand, serverJar);
+        }
+    }));
+    scheduleWorkspaceValidation(javaCommand, serverJar);
 }
 exports.activate = activate;
 function findBundledServerJar(context) {
@@ -53,10 +74,114 @@ function findBundledServerJar(context) {
     return candidates.length === 1 ? path.join(serverDirectory, candidates[0]) : undefined;
 }
 async function deactivate() {
+    if (validationTimer) {
+        clearTimeout(validationTimer);
+        validationTimer = undefined;
+    }
+    diagnostics?.clear();
     if (client) {
         await client.stop();
         client = undefined;
     }
 }
 exports.deactivate = deactivate;
+function isSysMLDocument(document) {
+    return document.uri.scheme === 'file' && isSysMLUri(document.uri);
+}
+function isSysMLUri(uri) {
+    return uri.fsPath.endsWith('.sysml') || uri.fsPath.endsWith('.kerml');
+}
+function scheduleWorkspaceValidation(javaCommand, serverJar) {
+    const config = vscode.workspace.getConfiguration('sysml');
+    if (!config.get('workspaceValidation.enabled', true)) {
+        diagnostics?.clear();
+        return;
+    }
+    if (validationTimer) {
+        clearTimeout(validationTimer);
+    }
+    validationTimer = setTimeout(() => {
+        validationTimer = undefined;
+        void validateWorkspace(javaCommand, serverJar);
+    }, 500);
+}
+async function validateWorkspace(javaCommand, serverJar) {
+    const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+    if (workspaceFolders.length === 0 || !diagnostics) {
+        diagnostics?.clear();
+        return;
+    }
+    const args = [
+        '-cp',
+        serverJar,
+        'org.omg.sysml.interactive.SysMLWorkspaceSemanticValidator',
+        '--json',
+        ...workspaceFolders.map(folder => folder.uri.fsPath)
+    ];
+    try {
+        const stdout = await execFileAsync(javaCommand, args);
+        publishWorkspaceDiagnostics(JSON.parse(stdout));
+    }
+    catch (error) {
+        if (error instanceof Error && 'stdout' in error && typeof error.stdout === 'string') {
+            try {
+                publishWorkspaceDiagnostics(JSON.parse(error.stdout));
+                return;
+            }
+            catch {
+                // Fall through to show the original validator failure.
+            }
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        vscode.window.showWarningMessage(`SysML workspace validation failed: ${message}`);
+    }
+}
+function execFileAsync(command, args) {
+    return new Promise((resolve, reject) => {
+        (0, child_process_1.execFile)(command, args, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
+            if (error) {
+                const execError = error;
+                execError.stdout = stdout;
+                execError.stderr = stderr;
+                reject(execError);
+            }
+            else {
+                resolve(stdout);
+            }
+        });
+    });
+}
+function publishWorkspaceDiagnostics(workspaceDiagnostics) {
+    diagnostics?.clear();
+    const byUri = new Map();
+    for (const workspaceDiagnostic of workspaceDiagnostics) {
+        const uri = vscode.Uri.parse(workspaceDiagnostic.uri);
+        const diagnostic = new vscode.Diagnostic(toRange(workspaceDiagnostic), workspaceDiagnostic.message, toSeverity(workspaceDiagnostic.severity));
+        diagnostic.code = workspaceDiagnostic.code;
+        const existing = byUri.get(uri.toString()) ?? [];
+        existing.push(diagnostic);
+        byUri.set(uri.toString(), existing);
+    }
+    for (const [uri, uriDiagnostics] of byUri) {
+        diagnostics?.set(vscode.Uri.parse(uri), uriDiagnostics);
+    }
+}
+function toRange(diagnostic) {
+    const line = Math.max((diagnostic.line ?? 1) - 1, 0);
+    const column = Math.max((diagnostic.column ?? 1) - 1, 0);
+    const length = Math.max(diagnostic.length ?? 1, 1);
+    return new vscode.Range(line, column, line, column + length);
+}
+function toSeverity(severity) {
+    switch (severity) {
+        case 'ERROR':
+            return vscode.DiagnosticSeverity.Error;
+        case 'WARNING':
+            return vscode.DiagnosticSeverity.Warning;
+        case 'INFO':
+            return vscode.DiagnosticSeverity.Information;
+        default:
+            return vscode.DiagnosticSeverity.Hint;
+    }
+}
 //# sourceMappingURL=extension.js.map

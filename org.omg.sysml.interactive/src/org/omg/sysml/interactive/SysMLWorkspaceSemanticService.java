@@ -3,6 +3,7 @@ package org.omg.sysml.interactive;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -102,7 +103,7 @@ public class SysMLWorkspaceSemanticService extends SysMLUtil {
     }
 
     protected SysMLWorkspaceDiagnostic toDiagnostic(Issue issue, Resource resource) {
-        String uri = issue.getUriToProblem() == null ? resource.getURI().toString() : issue.getUriToProblem().trimFragment().toString();
+        String uri = toExternalUri(issue.getUriToProblem() == null ? resource.getURI() : issue.getUriToProblem().trimFragment());
         return new SysMLWorkspaceDiagnostic(
                 uri,
                 issue.getSeverity() == null ? "INFO" : issue.getSeverity().name(),
@@ -112,5 +113,12 @@ public class SysMLWorkspaceSemanticService extends SysMLUtil {
                 issue.getOffset(),
                 issue.getLength(),
                 issue.getCode());
+    }
+
+    protected String toExternalUri(org.eclipse.emf.common.util.URI uri) {
+        if (uri.isFile()) {
+            return new File(uri.toFileString()).toURI().toString();
+        }
+        return URI.create(uri.toString()).toString();
     }
 }
