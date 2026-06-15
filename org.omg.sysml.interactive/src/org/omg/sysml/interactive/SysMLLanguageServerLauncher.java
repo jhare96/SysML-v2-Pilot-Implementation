@@ -12,7 +12,7 @@ public final class SysMLLanguageServerLauncher {
     }
 
     public static void main(String[] args) {
-        KerMLIdeSetup.doSetup();
+        new KerMLIdeSetup().createInjectorAndDoEMFRegistration();
         Injector languageInjector = new SysMLIdeSetup().createInjectorAndDoEMFRegistration();
         Injector serverInjector = languageInjector.createChildInjector(new ServerModule());
         ServerLauncher launcher = serverInjector.getInstance(ServerLauncher.class);
