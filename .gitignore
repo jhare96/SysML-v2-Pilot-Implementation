@@ -31,6 +31,12 @@ dependency-reduced-pom.xml
 # VS Code settings
 .vscode/
 
+# Node / VS Code extension generated artifacts
+node_modules/
+npm-debug.log*
+package-lock.json
+tool-support/syntax-highlighting/vscode/sysml/out/
+
 # Flattened POMs
 .flattened-pom.xml
 
