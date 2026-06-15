@@ -55,6 +55,12 @@ function findBundledServerJar(context: vscode.ExtensionContext): string | undefi
 
     const candidates = fs.readdirSync(serverDirectory)
         .filter(file => /^org\.omg\.sysml\.interactive-.*-all\.jar$/.test(file));
+    if (candidates.length > 1) {
+        vscode.window.showWarningMessage(
+            'Multiple bundled SysML language server jars were found. Set sysml.languageServer.jar to the absolute path of the jar to use.'
+        );
+        return undefined;
+    }
     return candidates.length === 1 ? path.join(serverDirectory, candidates[0]) : undefined;
 }
 
